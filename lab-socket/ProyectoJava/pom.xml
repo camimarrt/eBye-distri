@@ -5,7 +5,7 @@
 
 
     <groupId>py.una.pol.sd</groupId>
-    <artifactId>socket</artifactId>
+    <artifactId>Ebye</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
     <properties>
@@ -44,7 +44,6 @@
       <configuration>
         <archive>
           <manifest>
-            <mainClass>py.una.server.udp.UDPServer</mainClass>
           </manifest>
         </archive>
         <descriptorRefs>
