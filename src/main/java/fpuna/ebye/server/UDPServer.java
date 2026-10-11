@@ -31,8 +31,7 @@ public class UDPServer {
                 DatagramPacket paquete = new DatagramPacket(buffer, buffer.length);
                 socket.receive(paquete);
 
-                String solicitud = new String(paquete.getData(), 0,
-                        paquete.getLength(), StandardCharsets.UTF_8);
+                String solicitud = new String(paquete.getData(), 0, paquete.getLength(), StandardCharsets.UTF_8);
 
                 String respuesta = procesar(solicitud);
 
@@ -75,6 +74,7 @@ public class UDPServer {
                     }
                     return respuestaGetStock(requestId, p);
 
+                
                 // AGREGAR SERVICIOS ACA
                 // case "SERVICIO":
 
