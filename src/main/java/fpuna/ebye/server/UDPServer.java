@@ -12,13 +12,38 @@ import org.json.simple.parser.ParseException;
 import fpuna.ebye.entidad.Producto;
 import fpuna.ebye.servicio.StockServicio;
 
-public class UDPServer {
+public class UDPServer implements Runnable {
     private final int puerto;
-
+    
     public UDPServer(int puerto) {
         this.puerto = puerto;
     }
 
+    @Override
+    public void run() { // 2. run() en lugar de ejecutar()
+        try (DatagramSocket socket = new DatagramSocket(puerto)) {
+            System.out.println("eBye escuchando en el puerto UDP " + puerto);
+            byte[] buffer = new byte[2048];
+
+            while (!Thread.currentThread().isInterrupted()) {
+                DatagramPacket paquete = new DatagramPacket(buffer, buffer.length);
+                socket.receive(paquete);
+
+                String solicitud = new String(paquete.getData(), 0,
+                        paquete.getLength(), StandardCharsets.UTF_8);
+
+                String respuesta = procesar(solicitud);
+
+                byte[] datos = respuesta.getBytes(StandardCharsets.UTF_8);
+                DatagramPacket paqueteRespuesta = new DatagramPacket(datos,
+                        datos.length, paquete.getAddress(), paquete.getPort());
+                socket.send(paqueteRespuesta);
+            }
+        } catch (Exception e) {
+            System.err.println("Error en el servidor UDP: " + e.getMessage());
+        }
+    }
+    
     public void ejecutar() throws Exception {
         DatagramSocket socket = new DatagramSocket(puerto);
 
