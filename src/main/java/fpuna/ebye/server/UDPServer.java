@@ -33,7 +33,14 @@ public class UDPServer implements Runnable {
                 String solicitud = new String(paquete.getData(), 0,
                         paquete.getLength(), StandardCharsets.UTF_8);
 
-                String respuesta = procesar(solicitud);
+                String respuesta;
+                try {
+                    respuesta = procesar(solicitud);
+                } catch (Exception e) {
+                    // Cualquier error inesperado no debe tumbar el servidor
+                    System.err.println("Error inesperado: " + e.getMessage());
+                    respuesta = error(null, "ERROR_INTERNO", "Error interno del servidor");
+                }
 
                 // Responde a la misma direccion y puerto de donde vino el datagrama
                 byte[] datos = respuesta.getBytes(StandardCharsets.UTF_8);

@@ -33,11 +33,11 @@ public class Pedido {
         this.id_cliente = id_cliente;
     }
 
-    public String getFechaProgramada() {
+    public String getNombreDestinatario() {
         return nombre_destinatario;
     }
 
-    public void setFechaProgramada(String nombre_destinatario) {
+    public void setNombreDestinatario(String nombre_destinatario) {
         this.nombre_destinatario = nombre_destinatario;
     }
 
