@@ -12,17 +12,16 @@ import org.json.simple.parser.ParseException;
 import fpuna.ebye.entidad.Producto;
 import fpuna.ebye.servicio.StockServicio;
 
-public class UDPServer {
+public class UDPServer implements Runnable {
     private final int puerto;
 
     public UDPServer(int puerto) {
         this.puerto = puerto;
     }
 
-    public void ejecutar() throws Exception {
-        DatagramSocket socket = new DatagramSocket(puerto);
-
-        try {
+    @Override
+    public void run() {
+        try (DatagramSocket socket = new DatagramSocket(puerto)) {
             System.out.println("eBye escuchando en el puerto UDP " + puerto);
             byte[] buffer = new byte[2048];
 
@@ -31,7 +30,8 @@ public class UDPServer {
                 DatagramPacket paquete = new DatagramPacket(buffer, buffer.length);
                 socket.receive(paquete);
 
-                String solicitud = new String(paquete.getData(), 0, paquete.getLength(), StandardCharsets.UTF_8);
+                String solicitud = new String(paquete.getData(), 0,
+                        paquete.getLength(), StandardCharsets.UTF_8);
 
                 String respuesta = procesar(solicitud);
 
@@ -41,8 +41,8 @@ public class UDPServer {
                         datos.length, paquete.getAddress(), paquete.getPort());
                 socket.send(paqueteRespuesta);
             }
-        } finally {
-            socket.close();
+        } catch (Exception e) {
+            System.err.println("Error en el servidor UDP: " + e.getMessage());
         }
     }
 
@@ -74,7 +74,6 @@ public class UDPServer {
                     }
                     return respuestaGetStock(requestId, p);
 
-                
                 // AGREGAR SERVICIOS ACA
                 // case "SERVICIO":
 
