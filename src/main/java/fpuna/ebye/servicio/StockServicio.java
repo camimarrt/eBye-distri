@@ -8,11 +8,10 @@ import fpuna.ebye.entidad.Producto;
 
 public class StockServicio {
 
-    private ProductoDAO productoDAO;
+    private ProductoDAO productoDAO = new ProductoDAO();;
 
     public Producto reservarStock(Integer idProducto, Integer cantidad) {
-    ProductoDAO productoDAO = new ProductoDAO();
-    return productoDAO.consultarYReservar(idProducto, cantidad);
+    return this.productoDAO.consultarYReservar(idProducto, cantidad);
 }
 
     // Devuelve el producto con ese id, o null si no existe.
