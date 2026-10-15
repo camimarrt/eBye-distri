@@ -10,9 +10,10 @@ public class StockServicio {
 
     private ProductoDAO productoDAO;
 
-    public StockServicio() {
-        productoDAO = new ProductoDAO();
-    }
+    public Producto reservarStock(Integer idProducto, Integer cantidad) {
+    ProductoDAO productoDAO = new ProductoDAO();
+    return productoDAO.consultarYReservar(idProducto, cantidad);
+}
 
     // Devuelve el producto con ese id, o null si no existe.
     public Producto getProducto(int id) throws SQLException {

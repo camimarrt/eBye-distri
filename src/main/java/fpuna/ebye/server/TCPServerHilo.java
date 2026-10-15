@@ -60,28 +60,29 @@ public class TCPServerHilo extends Thread {
             switch (tipo.toUpperCase()) {
                 case "GET_STOCK":
                     int idProducto = enteroRequerido(solicitud, "idproducto");
+                    
+                    // Si la solicitud envía cantidad la usamos; si no, por defecto reserva 1 unidad
+                    int cantidad = solicitud.containsKey("cantidad") ? enteroRequerido(solicitud, "cantidad") : 1;
 
                     StockServicio s = new StockServicio();
-                    Producto p = s.getProducto(idProducto);
+                    Producto p = s.reservarStock(idProducto, cantidad); // <--- Llama al método que descuenta de la BD
 
                     System.out.println("Request atendido: " + requestId);
 
                     if (p == null) {
-                        return error(requestId, "PRODUCTO_NO_ENCONTRADO",
-                                "No existe el producto " + idProducto);
+                        return error(requestId, "STOCK_INSUFICIENTE_O_NO_EXISTE",
+                                "No hay stock suficiente o no existe el producto " + idProducto);
                     }
-                    return respuestaGetStock(requestId, p);
+                return respuestaGetStock(requestId, p);
 
                 // AGREGAR SERVICIOS ACA
                 // case "SERVICIO":
 
                 default:
                     return error(requestId, "TIPO_NO_SOPORTADO", "Solo se admite GET_STOCK");
-            }
+            
+                }
 
-        } catch (SQLException e) {
-            System.err.println("Error consultando stock: " + e.getMessage());
-            return error(requestId, "ERROR_BD", "No se pudo consultar el stock");
         } catch (ParseException e) {
             return error(null, "JSON_INVALIDO", "No se pudo interpretar la solicitud");
         } catch (IllegalArgumentException e) {
@@ -115,14 +116,17 @@ public class TCPServerHilo extends Thread {
     }
 
     private String respuestaGetStock(String requestId, Producto p) {
-        JSONObject respuesta = new JSONObject();
-        respuesta.put("ok", true);
-        respuesta.put("requestId", requestId);
-        respuesta.put("stock_disponible", p.getStock());
+    JSONObject respuesta = new JSONObject();
+    respuesta.put("ok", true);
+    respuesta.put("requestId", requestId);
 
-        // timestamp
-        respuesta.put("timestamp", java.time.OffsetDateTime.now().toString());
+    // Campos solicitados:
+    respuesta.put("nombre", p.getNombre());
+    respuesta.put("precio", p.getPrecio());
+    respuesta.put("cantidad", p.getStock()); 
+    // timestamp
+    respuesta.put("timestamp", java.time.OffsetDateTime.now().toString());
 
-        return respuesta.toJSONString();
-    }
+    return respuesta.toJSONString();
+}
 }

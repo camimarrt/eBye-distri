@@ -53,6 +53,17 @@ public class Cliente {
             System.out.println(respuesta.toJSONString());
             System.out.println("Estado del Pedido  " + idPedido + ":");
             System.out.println(respuesta);
+            if (respuesta.containsKey("nombre")) {
+                String nombre = (String) respuesta.get("nombre");
+                Number precioNum = (Number) respuesta.get("precio");
+                double precio = precioNum != null ? precioNum.doubleValue() : 0.0;
+                Number cantidadNum = (Number) respuesta.get("cantidad");
+                long cantidad = cantidadNum != null ? cantidadNum.longValue() : 0L;
+
+                System.out.println("Nombre: " + nombre);
+                System.out.println("Precio: " + precio);
+                System.out.println("Cantidad: " + cantidad);
+            }
         } catch (SocketTimeoutException e) {
             System.out.println("PedidosMasTarde no respondio en 3 segundos (servidor apagado o datagrama perdido)");
         } finally {
