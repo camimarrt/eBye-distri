@@ -1,8 +1,13 @@
 package fpuna.ebye;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.Socket;
 import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
@@ -44,7 +49,7 @@ public class Main {
             System.out.println();
             System.out.println("=== eBye ===");
             System.out.println("1. Consultar pedido (PedidosMasTarde, UDP)");
-            System.out.println("2. Cotizar envio (PedidosMasTarde, UDP)");
+            System.out.println("2. Solicitar transporte de un pedido (PedidosMasTarde, TCP)");
             System.out.println("0. Salir");
             System.out.print("Opcion: ");
             String opcion = teclado.nextLine().trim();
@@ -52,7 +57,7 @@ public class Main {
             if (opcion.equals("1")) {
                 consultarPedido(teclado);
             } else if (opcion.equals("2")) {
-                cotizarEnvio(teclado);
+                solicitarTransporte(teclado);
             } else if (opcion.equals("0")) {
                 System.out.println("Hasta luego.");
                 System.exit(0);
@@ -90,29 +95,23 @@ public class Main {
         System.out.println("  Ruta: " + r.get("id_ruta"));
     }
 
-    private static void cotizarEnvio(Scanner teclado) {
-        System.out.print("Id de la ruta: ");
-        int idRuta;
+    // Pide un id de pedido y manda "SOLICITAR_TRANSPORTE,<id>" por TCP (formato de texto, no JSON).
+    private static void solicitarTransporte(Scanner teclado) {
+        System.out.print("Id del pedido: ");
+        int idPedido;
         try {
-            idRuta = Integer.parseInt(teclado.nextLine().trim());
+            idPedido = Integer.parseInt(teclado.nextLine().trim());
         } catch (NumberFormatException e) {
             System.out.println("El id debe ser un numero.");
             return;
         }
 
-        JSONObject solicitud = new JSONObject();
-        solicitud.put("tipo", "COTIZAR_ENVIO");
-        solicitud.put("id_ruta", idRuta);
-
-        JSONObject r = enviar(solicitud);
-        if (r == null) {
-            return;
+        String respuesta = enviarTCP(hostPmt, puertoPmt, "SOLICITAR_TRANSPORTE," + idPedido);
+        if (respuesta == null) {
+            System.out.println("PedidosMasTarde no respondio en 3 segundos (servidor apagado o sin respuesta).");
+        } else {
+            System.out.println("Respuesta: " + respuesta);
         }
-
-        System.out.println("Cotizacion de la ruta " + idRuta + ":");
-        System.out.println("  Zona: " + r.get("zona"));
-        System.out.println("  Costo: " + r.get("costo"));
-        System.out.println("  Tiempo estimado: " + r.get("tiempo_estimado"));
     }
 
     // Agrega el requestId, envia la solicitud a PedidosMasTarde y devuelve la respuesta.
@@ -140,6 +139,30 @@ public class Main {
             return respuesta;
         } catch (Exception e) {
             System.out.println("Respuesta invalida de PedidosMasTarde: " + texto);
+            return null;
+        }
+    }
+
+    // Abre una conexion TCP, envia una linea y devuelve la linea de respuesta.
+    // Devuelve null si no hay respuesta en 3 segundos o si falla la conexion.
+    private static String enviarTCP(String host, int puerto, String mensaje) {
+        try (Socket socket = new Socket(host, puerto)) {
+            socket.setSoTimeout(3000);
+
+            BufferedWriter salida = new BufferedWriter(new OutputStreamWriter(
+                    socket.getOutputStream(), StandardCharsets.UTF_8));
+            BufferedReader entrada = new BufferedReader(new InputStreamReader(
+                    socket.getInputStream(), StandardCharsets.UTF_8));
+
+            salida.write(mensaje);
+            salida.write("\n");
+            salida.flush();
+
+            return entrada.readLine();
+        } catch (SocketTimeoutException e) {
+            return null;
+        } catch (Exception e) {
+            System.out.println("Error de red: " + e.getMessage());
             return null;
         }
     }
