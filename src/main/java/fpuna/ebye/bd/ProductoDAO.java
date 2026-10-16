@@ -50,8 +50,8 @@ public class ProductoDAO {
     }
     ///////////////////////////////////////////////
     public Producto consultarYReservar(Integer idProducto, Integer cantidadAReservar) {
-    String sqlUpdate = "UPDATE producto SET cantidad = cantidad - ? WHERE id_producto = ? AND cantidad >= ?";
-    String sqlSelect = "SELECT id_producto, nombre, precio, cantidad FROM producto WHERE id_producto = ?";
+    String sqlUpdate = "UPDATE producto SET stock = stock - ? WHERE id = ? AND stock >= ?";
+    String sqlSelect = "SELECT id, nombre, precio, stock FROM producto WHERE id = ?";
     
     Connection conn = null;
     PreparedStatement psUpdate = null;
@@ -79,10 +79,10 @@ public class ProductoDAO {
 
             if (rs.next()) {
                 producto = new Producto();
-                producto.setId(rs.getInt("id_producto"));
+                producto.setId(rs.getInt("id"));
                 producto.setNombre(rs.getString("nombre"));
                 producto.setPrecio(rs.getLong("precio"));
-                producto.setStock(rs.getInt("cantidad"));
+                producto.setStock(rs.getInt("stock"));
             }
             conn.commit();
         } else {
@@ -113,5 +113,38 @@ public class ProductoDAO {
 
     return producto;
 }
-
+    public boolean devolverStock(Integer idProducto, Integer cantidadADevolver) {
+        String sql = "UPDATE producto SET stock = stock + ? WHERE id = ?";
+        try (Connection conn = Bd.connect();
+            PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setInt(1, cantidadADevolver);
+            ps.setInt(2, idProducto);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    public Producto getProducto(int idProducto) {
+        String sql = "SELECT id, nombre, precio, stock FROM producto WHERE id = ?";
+        try (Connection conn = Bd.connect();
+            PreparedStatement ps = conn.prepareStatement(sql)) {
+            
+            ps.setInt(1, idProducto);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Producto p = new Producto();
+                    p.setId(rs.getInt("id"));
+                    p.setNombre(rs.getString("nombre"));
+                    p.setPrecio(rs.getLong("precio"));
+                    p.setStock(rs.getInt("stock"));
+                    return p;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 }

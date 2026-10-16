@@ -16,6 +16,8 @@ import java.util.UUID;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
+import fpuna.ebye.bd.ProductoDAO;
+import fpuna.ebye.entidad.Producto;
 import fpuna.ebye.server.TCPServer;
 import fpuna.ebye.server.UDPServer;
 
@@ -50,6 +52,7 @@ public class Main {
             System.out.println("=== eBye ===");
             System.out.println("1. Consultar pedido (PedidosMasTarde, UDP)");
             System.out.println("2. Solicitar transporte de un pedido (PedidosMasTarde, TCP)");
+            System.out.println("3. Realizar pedido y solicitar envio (eBye + PedidosMasTarde)");
             System.out.println("0. Salir");
             System.out.print("Opcion: ");
             String opcion = teclado.nextLine().trim();
@@ -58,6 +61,8 @@ public class Main {
                 consultarPedido(teclado);
             } else if (opcion.equals("2")) {
                 solicitarTransporte(teclado);
+            }else if (opcion.equals("3")) {
+                realizarPedido(teclado);
             } else if (opcion.equals("0")) {
                 System.out.println("Hasta luego.");
                 System.exit(0);
@@ -93,6 +98,65 @@ public class Main {
         System.out.println("  Estado: " + r.get("estado"));
         System.out.println("  Direccion: " + r.get("direccion"));
         System.out.println("  Ruta: " + r.get("id_ruta"));
+    }
+
+    private static void realizarPedido(Scanner teclado) {
+        System.out.println("\n--- Realizar Pedido ---");
+
+        int idProducto;
+        int cantidad;
+        int idEnvio;
+
+        try {
+            System.out.print("ID del producto: ");
+            idProducto = Integer.parseInt(teclado.nextLine().trim());
+
+            System.out.print("Cantidad a comprar: ");
+            cantidad = Integer.parseInt(teclado.nextLine().trim());
+            if (cantidad <= 0) {
+                System.out.println("La cantidad debe ser mayor a 0.");
+                return;
+            }
+
+            System.out.print("ID del envio en PedidosMasTarde: ");
+            idEnvio = Integer.parseInt(teclado.nextLine().trim());
+        } catch (NumberFormatException e) {
+            System.out.println("Los valores numericos son invalidos.");
+            return;
+        }
+
+        ProductoDAO dao = new ProductoDAO();
+
+        // 1. Reservar stock de forma atomica en la base de datos de eBye
+        System.out.println("Verificando y reservando stock en eBye...");
+        Producto prod = dao.consultarYReservar(idProducto, cantidad);
+
+        if (prod == null) {
+            System.out.println("ERROR: Stock insuficiente o no existe el producto ID " + idProducto);
+            return;
+        }
+
+        System.out.println("-> Stock reservado para '" + prod.getNombre() + "'. Stock restante: " + prod.getStock());
+
+        // 2. Coordinar el transporte con PedidosMasTarde mediante TCP
+        System.out.println("Solicitando transporte a PedidosMasTarde (TCP)...");
+        String respuesta = enviarTCP(hostPmt, puertoPmt, "SOLICITAR_TRANSPORTE," + idEnvio);
+
+        // 3. Evaluar respuesta y aplicar rollback si falla la red o el servicio remoto
+        boolean exito = false;
+        if (respuesta != null && (respuesta.contains("OK") || respuesta.contains("EXITO") || respuesta.contains("true"))) {
+            exito = true;
+        }
+
+        if (exito) {
+            System.out.println("PEDIDO COMPLETADO CON EXITO.");
+            System.out.println("Respuesta de PedidosMasTarde: " + respuesta);
+        } else {
+            System.out.println("ERROR al solicitar transporte. Respuesta: " + respuesta);
+            System.out.println("Ejecutando rollback: restaurando stock en eBye...");
+            dao.devolverStock(idProducto, cantidad);
+            System.out.println("-> Stock devuelto a la base de datos.");
+        }
     }
 
     // Pide un id de pedido y manda "SOLICITAR_TRANSPORTE,<id>" por TCP (formato de texto, no JSON).

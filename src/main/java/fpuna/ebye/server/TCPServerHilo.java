@@ -58,7 +58,7 @@ public class TCPServerHilo extends Thread {
             requestId = textoRequerido(solicitud, "requestId");
 
             switch (tipo.toUpperCase()) {
-                case "GET_STOCK":
+                case "GET_STOCK":{
                     int idProducto = enteroRequerido(solicitud, "idproducto");
                     
                     // Si la solicitud envía cantidad la usamos; si no, por defecto reserva 1 unidad
@@ -74,9 +74,26 @@ public class TCPServerHilo extends Thread {
                                 "No hay stock suficiente o no existe el producto " + idProducto);
                     }
                 return respuestaGetStock(requestId, p);
+                }
 
-                // AGREGAR SERVICIOS ACA
-                // case "SERVICIO":
+                case "REALIZAR_PEDIDO": {
+                    int idProducto = enteroRequerido(solicitud, "idproducto");
+                    int cantidad = enteroRequerido(solicitud, "cantidad");
+                    String destino = textoRequerido(solicitud, "destino");
+                    String cliente = textoRequerido(solicitud, "cliente");
+
+                    StockServicio s = new StockServicio();
+                    // Invoca el flujo coordinado: reserva local + socket hacia PedidosMasTarde
+                    String resultado = s.realizarPedido(idProducto, cantidad, destino, cliente);
+
+                    System.out.println("Request REALIZAR_PEDIDO atendido: " + requestId);
+
+                    if (resultado != null && resultado.startsWith("OK")) {
+                        return respuestaRealizarPedido(requestId, idProducto, cantidad, destino, cliente);
+                    } else {
+                        return error(requestId, "FALLO_REALIZAR_PEDIDO", resultado);
+                    }
+                }
 
                 default:
                     return error(requestId, "TIPO_NO_SOPORTADO", "Solo se admite GET_STOCK");
@@ -128,5 +145,17 @@ public class TCPServerHilo extends Thread {
     respuesta.put("timestamp", java.time.OffsetDateTime.now().toString());
 
     return respuesta.toJSONString();
-}
+    }
+    private String respuestaRealizarPedido(String requestId, int idProducto, int cantidad, String destino, String cliente) {
+        JSONObject respuesta = new JSONObject();
+        respuesta.put("ok", true);
+        respuesta.put("requestId", requestId);
+        respuesta.put("mensaje", "Pedido procesado y transporte solicitado exitosamente.");
+        respuesta.put("idproducto", idProducto);
+        respuesta.put("cantidad", cantidad);
+        respuesta.put("destino", destino);
+        respuesta.put("cliente", cliente);
+        respuesta.put("timestamp", java.time.OffsetDateTime.now().toString());
+        return respuesta.toJSONString();
+    }
 }

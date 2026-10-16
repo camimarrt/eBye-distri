@@ -88,9 +88,6 @@ public class UDPServer implements Runnable {
                     return error(requestId, "TIPO_NO_SOPORTADO", "Solo se admite GET_STOCK");
             }
 
-        } catch (SQLException e) {
-            System.err.println("Error consultando stock: " + e.getMessage());
-            return error(requestId, "ERROR_BD", "No se pudo consultar el stock");
         } catch (ParseException e) {
             return error(null, "JSON_INVALIDO", "No se pudo interpretar la solicitud");
         } catch (IllegalArgumentException e) {
