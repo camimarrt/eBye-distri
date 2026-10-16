@@ -101,61 +101,76 @@ public class Main {
     }
 
     private static void realizarPedido(Scanner teclado) {
-        System.out.println("\n--- Realizar Pedido ---");
+        System.out.println("\n--- Realizar pedido ---");
 
         int idProducto;
         int cantidad;
-        int idEnvio;
-
         try {
-            System.out.print("ID del producto: ");
+            System.out.print("Id del producto: ");
             idProducto = Integer.parseInt(teclado.nextLine().trim());
 
-            System.out.print("Cantidad a comprar: ");
+            System.out.print("Cantidad: ");
             cantidad = Integer.parseInt(teclado.nextLine().trim());
-            if (cantidad <= 0) {
-                System.out.println("La cantidad debe ser mayor a 0.");
-                return;
-            }
-
-            System.out.print("ID del envio en PedidosMasTarde: ");
-            idEnvio = Integer.parseInt(teclado.nextLine().trim());
         } catch (NumberFormatException e) {
-            System.out.println("Los valores numericos son invalidos.");
+            System.out.println("El id y la cantidad deben ser numeros.");
             return;
         }
 
+        if (cantidad <= 0) {
+            System.out.println("La cantidad debe ser mayor a 0.");
+            return;
+        }
+
+        System.out.print("Nombre del destinatario: ");
+        String nombre = teclado.nextLine().trim();
+
+        System.out.print("Direccion: ");
+        String direccion = teclado.nextLine().trim();
+
+        if (nombre.isEmpty() || direccion.isEmpty()) {
+            System.out.println("El nombre y la direccion no pueden estar vacios.");
+            return;
+        }
+
+        // 1. Descontar el stock en la base de eBye
         ProductoDAO dao = new ProductoDAO();
-
-        // 1. Reservar stock de forma atomica en la base de datos de eBye
-        System.out.println("Verificando y reservando stock en eBye...");
-        Producto prod = dao.consultarYReservar(idProducto, cantidad);
-
-        if (prod == null) {
-            System.out.println("ERROR: Stock insuficiente o no existe el producto ID " + idProducto);
+        Producto producto = dao.consultarYReservar(idProducto, cantidad);
+        if (producto == null) {
+            System.out.println("Stock insuficiente o no existe el producto " + idProducto);
             return;
         }
 
-        System.out.println("-> Stock reservado para '" + prod.getNombre() + "'. Stock restante: " + prod.getStock());
+        long montoTotal = producto.getPrecio() * cantidad;
 
-        // 2. Coordinar el transporte con PedidosMasTarde mediante TCP
-        System.out.println("Solicitando transporte a PedidosMasTarde (TCP)...");
-        String respuesta = enviarTCP(hostPmt, puertoPmt, "SOLICITAR_TRANSPORTE," + idEnvio);
+        // 2. Mandar el pedido a PedidosMasTarde por TCP
+        JSONObject solicitud = new JSONObject();
+        solicitud.put("tipo", "REGISTRAR_PEDIDO");
+        solicitud.put("requestId", UUID.randomUUID().toString());
+        solicitud.put("nombre", nombre);
+        solicitud.put("direccion", direccion);
+        solicitud.put("monto_total", montoTotal);
 
-        // 3. Evaluar respuesta y aplicar rollback si falla la red o el servicio remoto
-        boolean exito = false;
-        if (respuesta != null && (respuesta.contains("OK") || respuesta.contains("EXITO") || respuesta.contains("true"))) {
-            exito = true;
+        String texto = enviarTCP(hostPmt, puertoPmt, solicitud.toJSONString());
+
+        // 3. Si PedidosMasTarde no pudo guardar el pedido, se devuelve el stock
+        if (texto == null) {
+            System.out.println("PedidosMasTarde no respondio. Se devuelve el stock.");
+            dao.devolverStock(idProducto, cantidad);
+            return;
         }
 
-        if (exito) {
-            System.out.println("PEDIDO COMPLETADO CON EXITO.");
-            System.out.println("Respuesta de PedidosMasTarde: " + respuesta);
-        } else {
-            System.out.println("ERROR al solicitar transporte. Respuesta: " + respuesta);
-            System.out.println("Ejecutando rollback: restaurando stock en eBye...");
+        try {
+            JSONObject respuesta = (JSONObject) new JSONParser().parse(texto);
+            if (Boolean.TRUE.equals(respuesta.get("ok"))) {
+                System.out.println("Pedido registrado. Id del pedido: " + respuesta.get("idpedido"));
+                System.out.println("Monto total: " + montoTotal);
+            } else {
+                System.out.println("PedidosMasTarde rechazo el pedido: " + respuesta.get("mensaje"));
+                dao.devolverStock(idProducto, cantidad);
+            }
+        } catch (Exception e) {
+            System.out.println("Respuesta invalida de PedidosMasTarde: " + texto);
             dao.devolverStock(idProducto, cantidad);
-            System.out.println("-> Stock devuelto a la base de datos.");
         }
     }
 
