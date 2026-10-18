@@ -121,6 +121,15 @@ public class Main {
             return;
         }
 
+        System.out.print("CI: "); // Corregido: antes decia "Direccion"
+        int idCliente;
+        try {
+            idCliente = Integer.parseInt(teclado.nextLine().trim());
+        } catch (NumberFormatException e) {
+            System.out.println("El CI del debe ser un numero.");
+            return;
+        }
+
         System.out.print("Nombre del destinatario: ");
         String nombre = teclado.nextLine().trim();
 
@@ -146,6 +155,7 @@ public class Main {
         JSONObject solicitud = new JSONObject();
         solicitud.put("tipo", "REGISTRAR_PEDIDO");
         solicitud.put("requestId", UUID.randomUUID().toString());
+        solicitud.put("id_cliente", idCliente);
         solicitud.put("nombre", nombre);
         solicitud.put("direccion", direccion);
         solicitud.put("monto_total", montoTotal);
