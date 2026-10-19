@@ -9,7 +9,7 @@ public class Bd {
     private static final String url = "jdbc:postgresql://localhost:5432/ebye";
     private static final String user = "postgres";
 
-    private static final String password = "Franco14";
+    private static final String password = "emmote";
 
     /**
      * @return objeto Connection

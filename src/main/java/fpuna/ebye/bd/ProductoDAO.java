@@ -114,10 +114,10 @@ public class ProductoDAO {
     return producto;
 }
     public boolean devolverStock(Integer idProducto, Integer cantidad) {
-        String sql = "UPDATE producto SET stock = stock + ? WHERE id = ?";
-        try (Connection conn = Bd.connect();
-            PreparedStatement ps = conn.prepareStatement(sql)) {
-            
+        String query = "UPDATE producto SET stock = stock + ? WHERE id = ?";
+        try {
+            Connection conn = Bd.connect();
+            PreparedStatement ps = conn.prepareStatement(query);
             ps.setInt(1, cantidad);
             ps.setInt(2, idProducto);
             return ps.executeUpdate() > 0;

@@ -65,7 +65,7 @@ public class Main {
             }
         }
     }
-
+    // pide el ID del pedido, crea un JSON para la solicitud y envia por UDP
     private static void consultarPedido(Scanner teclado) {
         System.out.print("Id del pedido: ");
         int idPedido;
@@ -115,7 +115,7 @@ public class Main {
             return;
         }
 
-        System.out.print("CI: "); // Corregido: antes decia "Direccion"
+        System.out.print("CI: "); 
         int idCliente;
         try {
             idCliente = Integer.parseInt(teclado.nextLine().trim());
@@ -180,7 +180,7 @@ public class Main {
         }
     }
 
-     // Pide un id de pedido y manda ELIMINAR_PEDIDO por UDP. PedidosMasTarde borra la fila de la BD.
+     // pide un id de pedido y manda ELIMINAR_PEDIDO por UDP. PedidosMasTarde borra la fila de la BD.
     private static void cancelarEnvio(Scanner teclado) {
         System.out.print("Id del pedido a cancelar: ");
         int idPedido;

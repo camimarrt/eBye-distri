@@ -11,9 +11,11 @@ import java.sql.SQLException;
 public class StockServicio {
 
     private ProductoDAO productoDAO = new ProductoDAO();
+
     public Producto getProducto(int idProducto) {
         return productoDAO.getProducto(idProducto);
     }
+
     public Producto reservarStock(int idProducto, int cantidad) {
         return productoDAO.consultarYReservar(idProducto, cantidad);
     }
@@ -37,9 +39,10 @@ public class StockServicio {
         boolean envioRegistrado = false;
         String respuestaServidor = "";
 
-        try (Socket socket = new Socket(HOST_PEDIDOS, PUERTO_PEDIDOS);
-             PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
-             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
+        try {
+            Socket socket = new Socket(HOST_PEDIDOS, PUERTO_PEDIDOS);
+            PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
             // formato SOLICITAR_TRANSPORTE;idProducto;cantidad;destino;cliente
             String mensaje = String.format("SOLICITAR_TRANSPORTE;%d;%d;%s;%s",
