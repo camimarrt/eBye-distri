@@ -96,6 +96,23 @@ public class TCPServerHilo extends Thread {
                 default:
                     return error(requestId, "TIPO_NO_SOPORTADO", "Solo se admite GET_STOCK");
             
+                case "DEVOLVER_STOCK": {
+                    int idProducto = enteroRequerido(solicitud, "idproducto");
+                    int cantidad = enteroRequerido(solicitud, "cantidad");
+
+                    StockServicio s = new StockServicio();
+                    boolean exito = s.devolverStock(idProducto, cantidad);
+
+                    System.out.println("Request DEVOLVER_STOCK atendido: " + requestId);
+
+                    if (exito) {
+                        return respuestaDevolverStock(requestId, idProducto, cantidad);
+                    } else {
+                        return error(requestId, "FALLO_DEVOLVER_STOCK", 
+                                     "No se pudo devolver el stock del producto " + idProducto);
+                    }
+                }
+                
                 }
 
         } catch (ParseException e) {
@@ -153,6 +170,16 @@ public class TCPServerHilo extends Thread {
         respuesta.put("cantidad", cantidad);
         respuesta.put("destino", destino);
         respuesta.put("cliente", cliente);
+        respuesta.put("timestamp", java.time.OffsetDateTime.now().toString());
+        return respuesta.toJSONString();
+    }
+    private String respuestaDevolverStock(String requestId, int idProducto, int cantidad) {
+        JSONObject respuesta = new JSONObject();
+        respuesta.put("ok", true);
+        respuesta.put("requestId", requestId);
+        respuesta.put("mensaje", "Stock devuelto exitosamente.");
+        respuesta.put("idproducto", idProducto);
+        respuesta.put("cantidad", cantidad);
         respuesta.put("timestamp", java.time.OffsetDateTime.now().toString());
         return respuesta.toJSONString();
     }

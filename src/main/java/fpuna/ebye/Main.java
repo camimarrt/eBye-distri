@@ -153,6 +153,8 @@ public class Main {
         solicitud.put("nombre", nombre);
         solicitud.put("direccion", direccion);
         solicitud.put("monto_total", montoTotal);
+        solicitud.put("id_producto", idProducto);
+        solicitud.put("cantidad", cantidad);
 
         String texto = enviarTCP(hostPmt, puertoPmt, solicitud.toJSONString());
 
@@ -196,6 +198,23 @@ public class Main {
         JSONObject r = enviar(solicitud);
         if (r != null) {
             System.out.println(">> " + r.get("mensaje"));
+
+            // devolver el stock a la tabla producto de eBye
+            Object idProd = r.get("id_producto");
+            Object cant = r.get("cantidad");
+
+            if (idProd instanceof Number && cant instanceof Number) {
+                int idProducto = ((Number) idProd).intValue();
+                int cantidad = ((Number) cant).intValue();
+
+                if (idProducto > 0 && cantidad > 0) {
+                    if (new ProductoDAO().devolverStock(idProducto, cantidad)) {
+                        System.out.println(">> Stock devuelto: producto " + idProducto + " (+" + cantidad + ")");
+                    } else {
+                        System.out.println(">> No se pudo devolver el stock del producto " + idProducto);
+                    }
+                }
+            }
         }
     }
 

@@ -6,6 +6,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.sql.SQLException;
 
 public class StockServicio {
 
@@ -19,6 +20,10 @@ public class StockServicio {
     // ajusta el puerto al que esta configurado en TCPServer de Pedidos
     private static final String HOST_PEDIDOS = "localhost";
     private static final int PUERTO_PEDIDOS = 9877; 
+
+    public boolean devolverStock(int idProducto, int cantidad) {
+        return productoDAO.devolverStock(idProducto, cantidad);
+    }
 
     public String realizarPedido(Integer idProducto, Integer cantidad, String destino, String cliente) {
         
