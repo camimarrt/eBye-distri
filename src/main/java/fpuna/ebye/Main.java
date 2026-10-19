@@ -98,6 +98,49 @@ public class Main {
         System.out.println("  Estado: " + r.get("estado"));
         System.out.println("  Direccion: " + r.get("direccion"));
         System.out.println("  Ruta: " + r.get("id_ruta"));
+        // <--- AQUI INICIA LO NUEVO --->
+        // Rescatamos cantidad e idproducto (asegúrate de que el servidor los envíe en la respuesta)
+        long cantidadGuardada = 0;
+        int idProductoGuardado = 0;
+        
+        if (r.containsKey("cantidad")) {
+            cantidadGuardada = ((Number) r.get("cantidad")).longValue();
+        }
+        if (r.containsKey("idproducto")) {
+            idProductoGuardado = ((Number) r.get("idproducto")).intValue();
+        }
+
+        System.out.println("\nSu paquete esta " + r.get("estado"));
+        System.out.println("1. Continuar con el envio");
+        System.out.println("2. Cancelar el pedido");
+        System.out.print("Ingrese su opcion (1 o 2): ");
+        
+        String opcion = teclado.nextLine().trim();
+        JSONObject solicitudAccion = new JSONObject();
+        solicitudAccion.put("id", idPedido);
+
+        if (opcion.equals("1")) {
+            solicitudAccion.put("tipo", "ACTUALIZAR_ESTADO");
+            solicitudAccion.put("estado", "Solicitado");
+        } else if (opcion.equals("2")) {
+            solicitudAccion.put("tipo", "ELIMINAR_PEDIDO");
+            solicitudAccion.put("idproducto", idProductoGuardado);
+            solicitudAccion.put("cantidad", cantidadGuardada);
+        } else {
+            System.out.println("Opcion no valida. Regresando al menu...");
+            return;
+        }
+
+        // Enviamos la accion usando el mismo metodo de tu Main
+        JSONObject respuestaAccion = enviar(solicitudAccion);
+        if (respuestaAccion != null) {
+            if (Boolean.TRUE.equals(respuestaAccion.get("ok"))) {
+                System.out.println(">> Operacion exitosa: " + respuestaAccion.get("mensaje"));
+            } else {
+                System.out.println(">> Error: " + respuestaAccion.get("mensaje"));
+            }
+        }
+        // <--- AQUI TERMINA LO NUEVO --->
     }
 
     private static void realizarPedido(Scanner teclado) {
