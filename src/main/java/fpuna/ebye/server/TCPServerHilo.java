@@ -7,7 +7,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -32,7 +31,7 @@ public class TCPServerHilo extends Thread {
                         cliente.getInputStream(), StandardCharsets.UTF_8));
                 BufferedWriter salida = new BufferedWriter(new OutputStreamWriter(
                         cliente.getOutputStream(), StandardCharsets.UTF_8))) {
-            // Una solicitud por conexion: lee una linea JSON, responde y cierra
+            // una solicitud por conexion, lee una linea JSON, responde y cierra
             String solicitud = entrada.readLine();
             if (solicitud != null) {
                 salida.write(procesar(solicitud));
@@ -61,11 +60,11 @@ public class TCPServerHilo extends Thread {
                 case "GET_STOCK":{
                     int idProducto = enteroRequerido(solicitud, "idproducto");
                     
-                    // Si la solicitud envía cantidad la usamos; si no, por defecto reserva 1 unidad
-                    int cantidad = solicitud.containsKey("cantidad") ? enteroRequerido(solicitud, "cantidad") : 1;
+                    // si la solicitud envía cantidad la usamos, pero por defecto reserva 1 unidad
+                    int cantidad = enteroRequerido(solicitud, "cantidad");
 
                     StockServicio s = new StockServicio();
-                    Producto p = s.reservarStock(idProducto, cantidad); // <--- Llama al método que descuenta de la BD
+                    Producto p = s.reservarStock(idProducto, cantidad); // llama al método que descuenta de la BD
 
                     System.out.println("Request atendido: " + requestId);
 
@@ -83,7 +82,7 @@ public class TCPServerHilo extends Thread {
                     String cliente = textoRequerido(solicitud, "cliente");
 
                     StockServicio s = new StockServicio();
-                    // Invoca el flujo coordinado: reserva local + socket hacia PedidosMasTarde
+                    
                     String resultado = s.realizarPedido(idProducto, cantidad, destino, cliente);
 
                     System.out.println("Request REALIZAR_PEDIDO atendido: " + requestId);
@@ -94,7 +93,6 @@ public class TCPServerHilo extends Thread {
                         return error(requestId, "FALLO_REALIZAR_PEDIDO", resultado);
                     }
                 }
-
                 default:
                     return error(requestId, "TIPO_NO_SOPORTADO", "Solo se admite GET_STOCK");
             

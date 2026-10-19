@@ -11,7 +11,7 @@ import fpuna.ebye.entidad.Producto;
 
 public class ProductoDAO {
 
-    // Devuelve una lista con el producto buscado. Si el id no existe, la lista queda vacia.
+    // devuelve una lista con el producto buscado. Si el id no existe, la lista queda vacia
     public List<Producto> seleccionarPorId(int id) throws SQLException {
         String query = "SELECT id, nombre, stock, precio FROM producto WHERE id = ?;";
         List<Producto> lista = new ArrayList<>();
@@ -34,8 +34,8 @@ public class ProductoDAO {
 
                 lista.add(p);
             }
-
             return lista;
+            
         } finally {
             if (conn != null) {
                 try {
@@ -61,9 +61,9 @@ public class ProductoDAO {
 
     try {
         conn = Bd.connect();
-        conn.setAutoCommit(false); // Iniciar transacción para asegurar atomicidad
+        conn.setAutoCommit(false); 
 
-        // 1. Descontar stock condicionado a que haya suficiente cantidad
+        // descontar stock condicionado a que haya suficiente cantidad
         psUpdate = conn.prepareStatement(sqlUpdate);
         psUpdate.setInt(1, cantidadAReservar);
         psUpdate.setInt(2, idProducto);
@@ -72,7 +72,7 @@ public class ProductoDAO {
         int filasAfectadas = psUpdate.executeUpdate();
 
         if (filasAfectadas > 0) {
-            // 2. Obtener datos actualizados del producto (nombre, precio, nuevo stock)
+            // obtener datos actualizados del producto (nombre, precio, nuevo stock)
             psSelect = conn.prepareStatement(sqlSelect);
             psSelect.setInt(1, idProducto);
             rs = psSelect.executeQuery();
@@ -86,7 +86,7 @@ public class ProductoDAO {
             }
             conn.commit();
         } else {
-            conn.rollback(); // No había stock suficiente o no existe el id
+            conn.rollback(); // no había stock suficiente o no existe el id
         }
     } catch (SQLException e) {
         if (conn != null) {

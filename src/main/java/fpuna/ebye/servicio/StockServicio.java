@@ -16,19 +16,19 @@ public class StockServicio {
     public Producto reservarStock(int idProducto, int cantidad) {
         return productoDAO.consultarYReservar(idProducto, cantidad);
     }
-    // Ajusta el puerto al que esté configurado en TCPServer de PedidosMasTarde
+    // ajusta el puerto al que esta configurado en TCPServer de Pedidos
     private static final String HOST_PEDIDOS = "localhost";
     private static final int PUERTO_PEDIDOS = 9877; 
 
     public String realizarPedido(Integer idProducto, Integer cantidad, String destino, String cliente) {
         
-        // 1. Intentar descontar stock
+        // intentar descontar stock
         Producto producto = productoDAO.consultarYReservar(idProducto, cantidad);
         if (producto == null) {
             return "ERROR: Stock insuficiente o producto inexistente.";
         }
 
-        // 2. Conectarse a PedidosMasTarde para registrar el transporte
+        // conectarse a PedidosMasTarde para registrar el transporte
         boolean envioRegistrado = false;
         String respuestaServidor = "";
 
@@ -36,7 +36,7 @@ public class StockServicio {
              PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
              BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
 
-            // Trama: SOLICITAR_TRANSPORTE;<idProducto>;<cantidad>;<destino>;<cliente>
+            // formato SOLICITAR_TRANSPORTE;idProducto;cantidad;destino;cliente
             String mensaje = String.format("SOLICITAR_TRANSPORTE;%d;%d;%s;%s",
                     idProducto, cantidad, destino, cliente);
             out.println(mensaje);
@@ -50,7 +50,7 @@ public class StockServicio {
             System.err.println("Error comunicándose con PedidosMasTarde: " + e.getMessage());
         }
 
-        // 3. Compensación si falló el servicio de envío
+        // compensación si falló el servicio de envío
         if (!envioRegistrado) {
             productoDAO.devolverStock(idProducto, cantidad);
             return "ERROR: No se pudo coordinar el envio. Stock restablecido. Detalle: " + respuestaServidor;

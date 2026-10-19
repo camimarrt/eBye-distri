@@ -23,21 +23,15 @@ import fpuna.ebye.server.UDPServer;
 
 public class Main {
 
-    // Direccion del servidor de PedidosMasTarde (se puede cambiar con argumentos)
+    // direccion del servidor de PedidosMasTarde
     private static String hostPmt = "127.0.0.1";
     private static int puertoPmt = 6001;
 
     public static void main(String[] args) {
-        // Argumentos opcionales: puertoPropio hostPedidosMasTarde puertoPedidosMasTarde
-        int puerto = args.length > 0 ? Integer.parseInt(args[0]) : 6000;
-        if (args.length > 1) {
-            hostPmt = args[1];
-        }
-        if (args.length > 2) {
-            puertoPmt = Integer.parseInt(args[2]);
-        }
+        
+        int puerto =  6000;
 
-        // Servidores: cada uno en su propio hilo para que no se bloqueen entre si
+        // servidores: cada uno en su propio hilo para que no se bloqueen entre si
         Thread hiloUdp = new Thread(new UDPServer(puerto), "Servidor-UDP");
         Thread hiloTcp = new Thread(new TCPServer(puerto), "Servidor-TCP");
         hiloUdp.start();
@@ -45,7 +39,7 @@ public class Main {
 
         System.out.println("Servidores eBye iniciados en el puerto " + puerto + " (TCP y UDP).");
 
-        // Menu: eBye como cliente de PedidosMasTarde
+        // menu de eBye como cliente de PedidosMasTarde
         Scanner teclado = new Scanner(System.in);
         while (true) {
             System.out.println();
@@ -141,7 +135,7 @@ public class Main {
             return;
         }
 
-        // 1. Descontar el stock en la base de eBye
+        // descontar el stock en la base de eBye
         ProductoDAO dao = new ProductoDAO();
         Producto producto = dao.consultarYReservar(idProducto, cantidad);
         if (producto == null) {
@@ -151,7 +145,7 @@ public class Main {
 
         long montoTotal = producto.getPrecio() * cantidad;
 
-        // 2. Mandar el pedido a PedidosMasTarde por TCP
+        // mandar el pedido a PedidosMasTarde por TCP
         JSONObject solicitud = new JSONObject();
         solicitud.put("tipo", "REGISTRAR_PEDIDO");
         solicitud.put("requestId", UUID.randomUUID().toString());
@@ -162,7 +156,7 @@ public class Main {
 
         String texto = enviarTCP(hostPmt, puertoPmt, solicitud.toJSONString());
 
-        // 3. Si PedidosMasTarde no pudo guardar el pedido, se devuelve el stock
+        // si PedidosMasTarde no pudo guardar el pedido, se devuelve el stock
         if (texto == null) {
             System.out.println("PedidosMasTarde no respondio. Se devuelve el stock.");
             dao.devolverStock(idProducto, cantidad);
@@ -205,8 +199,8 @@ public class Main {
         }
     }
 
-    // Agrega el requestId, envia la solicitud a PedidosMasTarde y devuelve la respuesta.
-    // Devuelve null (y avisa por pantalla) si hubo algun problema o si PedidosMasTarde rechazo la solicitud.
+    // agrega el requestId, envia la solicitud a Pedidos y devuelve la respuesta.
+    // devuelve null si hubo algun problema o si Pedidos rechazo la solicitud.
     private static JSONObject enviar(JSONObject solicitud) {
         String requestId = UUID.randomUUID().toString();
         solicitud.put("requestId", requestId);
@@ -234,8 +228,8 @@ public class Main {
         }
     }
 
-    // Abre una conexion TCP, envia una linea y devuelve la linea de respuesta.
-    // Devuelve null si no hay respuesta en 3 segundos o si falla la conexion.
+    // abre una conexion TCP, envia una linea y devuelve la linea de respuesta.
+    // devuelve null si no hay respuesta en 3 segundos o si falla la conexion.
     private static String enviarTCP(String host, int puerto, String mensaje) {
         try (Socket socket = new Socket(host, puerto)) {
             socket.setSoTimeout(3000);
@@ -258,7 +252,7 @@ public class Main {
         }
     }
 
-    // Envia un datagrama y espera la respuesta. Devuelve null si pasan 3 segundos sin respuesta.
+    // envia un datagrama y espera la respuesta
     private static String enviarUDP(String host, int puerto, String mensaje) {
         try (DatagramSocket socket = new DatagramSocket()) {
             socket.setSoTimeout(3000);

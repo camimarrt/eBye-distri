@@ -15,7 +15,7 @@ public class TCPServer implements Runnable {
         try (ServerSocket serverSocket = new ServerSocket(puerto)) {
             System.out.println("eBye escuchando en el puerto TCP " + puerto);
 
-            // Por cada cliente que se conecta se crea un hilo que lo atiende
+            // por cada cliente que se conecta se crea un hilo que lo atiende
             while (true) {
                 new TCPServerHilo(serverSocket.accept()).start();
             }

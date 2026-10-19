@@ -26,7 +26,7 @@ public class UDPServer implements Runnable {
             byte[] buffer = new byte[2048];
 
             while (true) {
-                // Espera un datagrama (se queda bloqueado hasta que llegue uno)
+                // espera un datagrama (se queda bloqueado hasta que llegue uno)
                 DatagramPacket paquete = new DatagramPacket(buffer, buffer.length);
                 socket.receive(paquete);
 
@@ -37,12 +37,12 @@ public class UDPServer implements Runnable {
                 try {
                     respuesta = procesar(solicitud);
                 } catch (Exception e) {
-                    // Cualquier error inesperado no debe tumbar el servidor
+                    // cualquier error inesperado no debe tumbar el servidor
                     System.err.println("Error inesperado: " + e.getMessage());
                     respuesta = error(null, "ERROR_INTERNO", "Error interno del servidor");
                 }
 
-                // Responde a la misma direccion y puerto de donde vino el datagrama
+                // responde a la misma direccion y puerto de donde vino el datagrama
                 byte[] datos = respuesta.getBytes(StandardCharsets.UTF_8);
                 DatagramPacket paqueteRespuesta = new DatagramPacket(datos,
                         datos.length, paquete.getAddress(), paquete.getPort());
