@@ -51,7 +51,7 @@ public class Main {
             System.out.println();
             System.out.println("=== eBye ===");
             System.out.println("1. Consultar pedido (PedidosMasTarde, UDP)");
-            System.out.println("2. Solicitar transporte de un pedido (PedidosMasTarde, TCP)");
+            System.out.println("2. Cancelar envio de un pedido (PedidosMasTarde, UDP)");
             System.out.println("3. Realizar pedido y solicitar envio (eBye + PedidosMasTarde)");
             System.out.println("0. Salir");
             System.out.print("Opcion: ");
@@ -60,8 +60,8 @@ public class Main {
             if (opcion.equals("1")) {
                 consultarPedido(teclado);
             } else if (opcion.equals("2")) {
-                solicitarTransporte(teclado);
-            }else if (opcion.equals("3")) {
+                cancelarEnvio(teclado);
+            } else if (opcion.equals("3")) {
                 realizarPedido(teclado);
             } else if (opcion.equals("0")) {
                 System.out.println("Hasta luego.");
@@ -98,49 +98,6 @@ public class Main {
         System.out.println("  Estado: " + r.get("estado"));
         System.out.println("  Direccion: " + r.get("direccion"));
         System.out.println("  Ruta: " + r.get("id_ruta"));
-        // <--- AQUI INICIA LO NUEVO --->
-        // Rescatamos cantidad e idproducto (asegúrate de que el servidor los envíe en la respuesta)
-        long cantidadGuardada = 0;
-        int idProductoGuardado = 0;
-        
-        if (r.containsKey("cantidad")) {
-            cantidadGuardada = ((Number) r.get("cantidad")).longValue();
-        }
-        if (r.containsKey("idproducto")) {
-            idProductoGuardado = ((Number) r.get("idproducto")).intValue();
-        }
-
-        System.out.println("\nSu paquete esta " + r.get("estado"));
-        System.out.println("1. Continuar con el envio");
-        System.out.println("2. Cancelar el pedido");
-        System.out.print("Ingrese su opcion (1 o 2): ");
-        
-        String opcion = teclado.nextLine().trim();
-        JSONObject solicitudAccion = new JSONObject();
-        solicitudAccion.put("id", idPedido);
-
-        if (opcion.equals("1")) {
-            solicitudAccion.put("tipo", "ACTUALIZAR_ESTADO");
-            solicitudAccion.put("estado", "Solicitado");
-        } else if (opcion.equals("2")) {
-            solicitudAccion.put("tipo", "ELIMINAR_PEDIDO");
-            solicitudAccion.put("idproducto", idProductoGuardado);
-            solicitudAccion.put("cantidad", cantidadGuardada);
-        } else {
-            System.out.println("Opcion no valida. Regresando al menu...");
-            return;
-        }
-
-        // Enviamos la accion usando el mismo metodo de tu Main
-        JSONObject respuestaAccion = enviar(solicitudAccion);
-        if (respuestaAccion != null) {
-            if (Boolean.TRUE.equals(respuestaAccion.get("ok"))) {
-                System.out.println(">> Operacion exitosa: " + respuestaAccion.get("mensaje"));
-            } else {
-                System.out.println(">> Error: " + respuestaAccion.get("mensaje"));
-            }
-        }
-        // <--- AQUI TERMINA LO NUEVO --->
     }
 
     private static void realizarPedido(Scanner teclado) {
@@ -227,9 +184,9 @@ public class Main {
         }
     }
 
-    // Pide un id de pedido y manda "SOLICITAR_TRANSPORTE,<id>" por TCP (formato de texto, no JSON).
-    private static void solicitarTransporte(Scanner teclado) {
-        System.out.print("Id del pedido: ");
+     // Pide un id de pedido y manda ELIMINAR_PEDIDO por UDP. PedidosMasTarde borra la fila de la BD.
+    private static void cancelarEnvio(Scanner teclado) {
+        System.out.print("Id del pedido a cancelar: ");
         int idPedido;
         try {
             idPedido = Integer.parseInt(teclado.nextLine().trim());
@@ -238,11 +195,13 @@ public class Main {
             return;
         }
 
-        String respuesta = enviarTCP(hostPmt, puertoPmt, "SOLICITAR_TRANSPORTE," + idPedido);
-        if (respuesta == null) {
-            System.out.println("PedidosMasTarde no respondio en 3 segundos (servidor apagado o sin respuesta).");
-        } else {
-            System.out.println("Respuesta: " + respuesta);
+        JSONObject solicitud = new JSONObject();
+        solicitud.put("tipo", "ELIMINAR_PEDIDO");
+        solicitud.put("id", idPedido);
+
+        JSONObject r = enviar(solicitud);
+        if (r != null) {
+            System.out.println(">> " + r.get("mensaje"));
         }
     }
 
